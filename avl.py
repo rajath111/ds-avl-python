@@ -1,5 +1,4 @@
-from typing import Optional
-
+from typing import Any, List, Optional
 
 class Node:
     def __init__(self, value, left: 'Node' = None, right: 'Node' = None, height: int = 1) -> None:
@@ -8,6 +7,9 @@ class Node:
         self.right = right
         self.height = height
 
+
+    def __str__(self) -> str:
+        return f'Node({self.value})'
 
 
 class Avl:
@@ -39,20 +41,15 @@ class Avl:
     
     def _get_node_height(self, node: Node) -> int:
 
-        left = 0
-        right = 0
+        if node == None:
+            return 0
 
-        if node.left:
-            left = node.left.height
-
-        if node.right:
-            right = node.right.height
-
-        return max(left, right) + 1
+        return node.height
     
 
     def _get_balance_factor(self, node: Node) -> int:
-
+        if node == None:
+            return 0
         return self._get_node_height(node.left) - self._get_node_height(node.right)
 
     
@@ -72,16 +69,22 @@ class Avl:
         '''
         A = node
         B = A.left
-        C = B.left
         Br = B.right
 
         # Rotate
-        B.left = C
         B.right = A
         A.left = Br
 
+        # Order is important. Because first we need to update height of child and then its parent
+        self._update_height(A)
+        self._update_height(B)
         
-        pass
+        return B
+
+
+    def _update_height(self, node: Node) -> None:
+        node.height = max(self._get_node_height(node.left), self._get_node_height(node.right)) + 1
+
 
     def _rotate_left(self, node: Node) -> Node:
         '''
@@ -99,14 +102,14 @@ class Avl:
         '''
         A = node
         B = A.right
-        C = B.right
         Bl = B.left
         
         # Rotate
         B.left = A
-        B.right = C
         A.right = Bl
-        
+
+        self._update_height(A)
+        self._update_height(B)
         return B
         
     
@@ -116,11 +119,13 @@ class Avl:
 
         if value < node.value:
             node.left = self._insert_recur(node.left, value)
-        else:
+        elif value > node.value:
             node.right = self._insert_recur(node.right, value)
+        else:
+            return node
 
         # 1. Update height
-        node.height = self._get_node_height(node)
+        node.height = max(self._get_node_height(node.left), self._get_node_height(node.right)) + 1
 
         # 2. Find balace factor
         balance_factor = self._get_balance_factor(node)
@@ -134,19 +139,17 @@ class Avl:
                 return self._rotate_right(node)
             else:
                 # Perform LR
-                
-                pass
+                node.left = self._rotate_left(node.left)
+                return self._rotate_right(node)
 
         elif balance_factor < -1:
             # Right rotations RR vs RL
-            if value >= node.right.value:
+            if value > node.right.value:
                 # Perform RR    
-                pass
+                return self._rotate_left(node)
             else:
                 # Perform RL
-                pass
+                node.right = self._rotate_right(node.right)
+                return self._rotate_left(node)
 
         return node
-
-    
-    
